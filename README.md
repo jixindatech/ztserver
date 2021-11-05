@@ -1,5 +1,5 @@
 ## ztserver
-这是零信任网关的主要组件，包含一个chrome插件，用来实现打开网络通信的功能，同时提供了web接口进行网关管理告警配置等。欢迎issue和star!
+这是零信任网关的主要组件，包含一个chrome插件，用来实现打开网络通信的功能，同时提供了web接口进行网关管理告警配置等。[ztgw的地址](https://github.com/jixindatech/ztgw)。 欢迎issue和star!
 
 ## 基本框架
 
