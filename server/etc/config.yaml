@@ -1,0 +1,42 @@
+# server mode
+mode: debug
+# Length of secret Must be 32, encrypt data for token
+secret: 'ch@ngfengpol@nghuiyoushi!!!!!!!!'
+# the web api server
+web:
+  addr : 0.0.0.0:8000
+  user : admin
+  password : 111111
+  jwtkey: 123456sdfq345sdfaf
+  identitykey: 'id'
+
+#log_path : ./logs
+# log level[debug|info|warn|error],default error
+log_level : debug
+# db_path for sqlite3
+db_path: ztserver.db
+# ssh for gateway hosts
+ssh:
+-
+  fw: firewall  # firewall type, if use iptables, you would add fw type for iptables
+  ipset: test  # ipset
+  host: 192.168.91.100:22 # ip:port for ssh
+  user: root # ssh user
+  password: 123456 # ssh password
+  server: # servers proxied by this host
+    - hr.xxxx.com
+    - b.xxxx.com
+    - i.xxxx.com
+# redis for data cache
+redis:
+  addr: 192.168.91.100:6379
+  password: 123456
+  db: 0
+
+es:
+  host:
+    - http://192.168.91.100:9200
+  username: admin
+  password: guessme
+  gwindex: gwindex
+  wsindex: wsindex

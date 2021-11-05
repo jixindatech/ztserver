@@ -1,0 +1,42 @@
+{
+    "manifest_version": 2,
+    "name": "网关客户端",
+    "version": "1.0",
+    "description": "零信任网关客户端 Chrome 扩展",
+    "icons": {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+    },
+    "web_accessible_resources": [
+        "images/*.jpg",
+        "images/*.png"
+    ],    
+    "browser_action": {
+        "default_icon": {
+            "19": "images/icon19.png",
+            "38": "images/icon38.png"
+        },
+        "default_title": "网关客户端",
+        "default_popup": "popup.html"
+    },
+    "permissions": [
+        "storage",
+        "notifications",
+        "system.cpu",
+        "system.memory",
+        "system.storage",
+        "system.display",
+        "webRequest", 
+        "webRequestBlocking",
+        "*://www.jixindatech.com/*"
+    ],
+    "background": {
+        "scripts": [ 
+            "js/const.js",
+            "js/reconnecting-websocket.js",
+            "js/background.js"
+        ]
+    },
+    "options_page": "options.html"
+}

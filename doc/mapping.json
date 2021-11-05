@@ -1,0 +1,32 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "max_result_window": 20000000
+  },
+  "mappings": {
+    "properties": {
+      "user": {
+        "type": "keyword"
+      },
+      "email": {
+        "type": "keyword"
+      },
+      "client": {
+        "type": "text"
+      },
+      "event": {
+        "type": "keyword"
+      },
+      "dev": {
+        "type": "text"
+      },
+      "time": {
+        "type": "long"
+      },
+      "gw": {
+        "type": "text"
+      }
+    }
+  }
+}

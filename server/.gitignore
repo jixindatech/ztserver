@@ -1,0 +1,10 @@
+bin
+.DS_Store
+y.output
+.idea
+*.iml
+*.txt
+vendor/
+logs/
+db/*.db
+dashboard
