@@ -208,8 +208,6 @@ func QueryInfo(index string, _query map[string]interface{}) ([]byte, error) {
 		return nil, errors.New("elasticsearch body has error")
 	}
 
-	fmt.Println(response.String())
-
 	var b bytes.Buffer
 	_, err = b.ReadFrom(response.Body)
 

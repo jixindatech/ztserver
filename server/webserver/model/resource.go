@@ -1,13 +1,15 @@
 package model
 
+import "gorm.io/datatypes"
+
 type Resource struct {
 	Model
 
 	Name   string `json:"name" gorm:"column:name;unique;not null"`
-	Server string `json:"server" gorm:"column:server;unique;not null"`
+	Host   string `json:"host" gorm:"column:host;unique;not null"`
 	Port   int    `json:"port" gorm:"column:port"`
 	Path   string `json:"path" gorm:"column:path"`
-	Method string `json:"method" gorm:"column:method"`
+	Method datatypes.JSON `json:"method" gorm:"column:method"`
 	Remark string `json:"remark" gorm:"column:remark"`
 
 	Users []User `gorm:"many2many:user_resource;"`
@@ -16,7 +18,9 @@ type Resource struct {
 func AddResource(data map[string]interface{}) error {
 	resource := Resource{
 		Name:   data["name"].(string),
-		Server: data["server"].(string),
+		Host: data["host"].(string),
+		Path: data["path"].(string),
+		Method: data["method"].([]byte),
 		Remark: data["remark"].(string),
 	}
 

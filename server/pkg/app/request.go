@@ -8,8 +8,8 @@ import (
 // MarkErrors mark error log info
 func MarkErrors(errors []*validation.Error) {
 	for _, err := range errors {
-		// log.Println(err.Key, err.Message)
-		fmt.Println(err.Message)
+		//log.Println(err.Key, err.Message)
+		//fmt.Println(err.Message)
 	}
 
 	return

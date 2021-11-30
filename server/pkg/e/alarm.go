@@ -53,7 +53,6 @@ func alarm(level string, str string) {
 
 	jsons, errs := json.Marshal(msg)
 	if errs != nil {
-		fmt.Println("json marshal error:", errs)
 		return
 	}
 

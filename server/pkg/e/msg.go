@@ -27,19 +27,25 @@ var MsgFlags = map[int]string{
 	GetEmailFailed: "获取邮箱失败",
 	PutEmailFailed: "修改邮箱失败",
 
-	AddCertFailed:    "增加证书失败",
-	GetCertFailed:    "获取证书失败",
-	PutCertFailed:    "修改证书失败",
-	DeleteCertFailed: "删除证书失败",
+	AddSSLFailed:    "增加证书失败",
+	GetSSLFailed:    "获取证书失败",
+	PutSSLFailed:    "修改证书失败",
+	DeleteSSLFailed: "删除证书失败",
 
-	AddProxyFailed:    "添加代理失败",
-	GetProxyFailed:    "获取代理失败",
-	PutProxyFailed:    "修改代理失败",
-	DeleteProxyFailed: "删除代理失败",
+	AddUpstreamFailed:    "添加转发失败",
+	GetUpstreamFailed:    "获取转发失败",
+	PutUpstreamFailed:    "修改转发失败",
+	DeleteUpstreamFailed: "删除转发失败",
 
 	GetGwEventsFailed: "获取访问日志失败",
 
 	GetWsEventsFailed: "获取网络日志失败",
+
+	AddRouterFailed:    "添加路由失败",
+	GetRouterFailed:    "获取路由失败",
+	PutRouterFailed:    "修改路由失败",
+	DeleteRouterFailed: "删除路由失败",
+
 }
 
 func GetMsg(code int) string {

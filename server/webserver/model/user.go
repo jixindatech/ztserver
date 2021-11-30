@@ -10,6 +10,7 @@ type User struct {
 
 	Name      string `json:"name" gorm:"column:name;not null"`
 	Phone     string `json:"phone" gorm:"column:phone"`
+	Secret    string `json:"-" gorm:"column:secret"`
 	Email     string `json:"email" gorm:"column:email;not null;unique"`
 	Timestamp int64  `json:"-" gorm:"column:timestamp;"`
 	Status    int    `json:"status" gorm:"column:status"`
@@ -142,7 +143,7 @@ func SaveUserResource(id uint64, data map[string]interface{}) error {
 		temp.Model.ID = id
 		resources = append(resources, &temp)
 	}
-	fmt.Println(resources)
+
 	err := db.Debug().Model(&user).Association("Resources").Replace(resources).Error
 	if err != nil {
 		return err

@@ -27,17 +27,22 @@ const (
 	GetEmailFailed = 3002
 	PutEmailFailed = 3003
 
-	AddCertFailed    = 4001
-	GetCertFailed    = 4002
-	PutCertFailed    = 4003
-	DeleteCertFailed = 4004
+	AddSSLFailed    = 4001
+	GetSSLFailed    = 4002
+	PutSSLFailed    = 4003
+	DeleteSSLFailed = 4004
 
-	AddProxyFailed    = 5001
-	GetProxyFailed    = 5002
-	PutProxyFailed    = 5003
-	DeleteProxyFailed = 5004
+	AddUpstreamFailed    = 5001
+	GetUpstreamFailed    = 5002
+	PutUpstreamFailed    = 5003
+	DeleteUpstreamFailed = 5004
 
 	GetGwEventsFailed = 6001
 
 	GetWsEventsFailed = 7001
+
+	AddRouterFailed    = 8001
+	GetRouterFailed    = 8002
+	PutRouterFailed    = 8003
+	DeleteRouterFailed = 8004
 )

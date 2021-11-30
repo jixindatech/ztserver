@@ -15,6 +15,7 @@ import (
 var closeDoor int = 0
 var openDoor int = 1
 var clearFw int = 2
+var getFwEntry int = 3
 
 type sshConfig struct {
 	Servers  map[string]int
@@ -64,26 +65,46 @@ func sshClearFw(config *settings.Ssh) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	session, err := client.NewSession()
 	if err != nil {
 		return err
 	}
 
-	defer session.Close()
-
-	var cmdStr string
-	switch config.Fw {
-	case firewall:
-		cmdStr = firewallCmd[clearFw]
-	default:
-		return fmt.Errorf("%s", "unknown fw type")
-	}
+	ipset := config.Ipset
+	cmdRun := fmt.Sprintf(firewallCmd[getFwEntry], ipset)
 
 	var b bytes.Buffer
 	session.Stdout = &b
-	if err := session.Run(cmdStr); err != nil {
+	if err := session.Run(cmdRun); err != nil {
 		return err
+	}
+	session.Close()
+
+	ips := strings.Split(string(b.Bytes()), "\n")
+
+	cmd := ""
+	for _, ip := range ips {
+		if len(ip) ==0 {
+			continue
+		}
+
+		cmdRun = fmt.Sprintf(firewallCmd[closeDoor], ipset, ip)
+		cmd = cmd + cmdRun + ";"
+	}
+
+	if len(cmd) > 0 {
+		session, err = client.NewSession()
+		if err != nil {
+			return err
+		}
+		output, err := session.CombinedOutput(cmd)
+		if err != nil {
+			return err
+		}
+
+		session.Close()
 	}
 
 	return nil
@@ -103,6 +124,7 @@ func runCmd(host *sshConfig, cmd int, ip string) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	session, err := client.NewSession()
 	if err != nil {
@@ -119,7 +141,6 @@ func runCmd(host *sshConfig, cmd int, ip string) error {
 	}
 
 	cmdRun := fmt.Sprintf(cmdStr, host.Ipset, ip)
-
 	var b bytes.Buffer
 	session.Stdout = &b
 	if err := session.Run(cmdRun); err != nil {

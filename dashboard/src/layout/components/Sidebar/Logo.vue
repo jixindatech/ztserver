@@ -24,7 +24,7 @@ export default {
   },
   data() {
     return {
-      title: '数据审计系统',
+      title: '零信任管理后台',
       // logo: 'https://wpimg.wallstcn.com/69a1c46c-eb1c-4b46-8bd4-e9e686ef5251.png'
       logo: require('@/assets/logo.png')
     }

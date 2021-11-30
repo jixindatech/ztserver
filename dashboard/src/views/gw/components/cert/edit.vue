@@ -14,8 +14,8 @@
       style="width: 400px"
       status-icon
     >
-      <el-form-item label="服务器名称" prop="server">
-        <el-input v-model="formData.server" :disabled="typeof(formData.id) !== 'undefined' && formData.id !== 0" maxlength="30" />
+      <el-form-item label="名称" prop="name">
+        <el-input v-model="formData.name" :disabled="typeof(formData.id) !== 'undefined' && formData.id !== 0" maxlength="30" />
       </el-form-item>
       <el-form-item label="公钥:" prop="pub">
         <el-input v-model="formData.pub" type="textarea" />
@@ -64,7 +64,7 @@ export default {
   data() {
     return {
       rules: {
-        server: [{ required: true, message: '请输入服务器名称', trigger: 'blur' }],
+        name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
         pub: [{ required: true, message: '请输入公钥', trigger: 'blur' }],
         pri: [{ required: true, message: '请输入私钥', trigger: 'blur' }]
       }

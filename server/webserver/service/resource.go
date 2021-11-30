@@ -5,10 +5,10 @@ import "zt-server/webserver/model"
 type Resource struct {
 	ID     uint64
 	Name   string
-	Server string
+	Host string
 	Port   int
 	Path   string
-	Method string
+	Method []byte
 	Remark string
 
 	Page     int
@@ -18,7 +18,9 @@ type Resource struct {
 func (r *Resource) Save() error {
 	data := make(map[string]interface{})
 	data["name"] = r.Name
-	data["server"] = r.Server
+	data["host"] = r.Host
+	data["path"] = r.Path
+	data["method"] = r.Method
 	data["remark"] = r.Remark
 
 	if r.ID > 0 {
@@ -26,8 +28,8 @@ func (r *Resource) Save() error {
 		if err != nil {
 			return err
 		}
-
-		return SetupUser()
+		// resource update
+		return SetupUserResource()
 	}
 	return model.AddResource(data)
 }
@@ -49,5 +51,10 @@ func (u *Resource) GetList() ([]*model.Resource, int, error) {
 }
 
 func (u *Resource) Delete() error {
-	return model.DeleteResource(u.ID)
+	err := model.DeleteResource(u.ID)
+	if err != nil {
+		return err
+	}
+
+	return SetupUserResource()
 }

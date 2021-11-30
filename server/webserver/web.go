@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"zt-server/webserver/model"
 	"zt-server/webserver/service"
-	"zt-server/webserver/utils"
-
 	// "github.com/go-playground/validator/v10"
 	"github.com/gin-gonic/gin"
 	"time"
@@ -54,22 +52,22 @@ func (web *Server) Init(key string) error {
 		return err
 	}
 
-	err = utils.SetEncryptKey(key)
+	err = service.SetupSSLs()
 	if err != nil {
 		return err
 	}
 
-	err = service.SetupCerts()
+	err = service.SetupUpstreams()
 	if err != nil {
 		return err
 	}
 
-	err = service.SetupProxys()
+	err = service.SetupRouters()
 	if err != nil {
 		return err
 	}
 
-	err = service.SetupUser()
+	err = service.SetupUserResource()
 	if err != nil {
 		return err
 	}

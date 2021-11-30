@@ -31,6 +31,12 @@
     >
       <el-table-column align="center" type="index" label="序号" width="60" />
       <el-table-column align="center" prop="server" label="服务器名称" />
+      <el-table-column align="center" prop="lb" label="方式" />
+      <el-table-column align="center" prop="backend" label="后端">
+        <template slot-scope="scope">
+          <el-input v-for="(item, index) in scope.row.backend" :key="index" :value="item.ip + ':' + item.port" size="mini" />
+        </template>
+      </el-table-column>
       <el-table-column align="center" prop="remark" label="备注" />
       <el-table-column align="center" label="操作" width="330">
         <template slot-scope="scope">

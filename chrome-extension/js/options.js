@@ -1,11 +1,9 @@
-document.getElementById('email').value = localStorage.email
-document.getElementById('token').value  = localStorage.token
+document.getElementById('data').value  = localStorage.data
 
 document.getElementById('save').onclick = function(){
-    localStorage.email = document.getElementById('email').value;
-    localStorage.token = document.getElementById('token').value;
-    if (localStorage.email.length == 0 || localStorage.token == 0) {
-        alert('请输入正确的邮箱地址或Token')
+    localStorage.data = document.getElementById('data').value;
+    if (localStorage.data.length == 0) {
+        alert('请输入正确的数据')
     } else {
         alert('保存成功.');
     }

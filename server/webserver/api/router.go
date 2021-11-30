@@ -5,24 +5,24 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
-	"strings"
 	"zt-server/pkg/app"
 	"zt-server/pkg/core/golog"
 	"zt-server/pkg/e"
 	"zt-server/webserver/service"
 )
 
-type certForm struct {
-	Server string `json:"server" valid:"Required;MaxSize(254)"`
-	Pub    string `json:"pub" valid:"Required;MaxSize(5120)"`
-	Pri    string `json:"pri"  valid:"Required;MaxSize(5120)"`
-	Remark string `json:"remark" valid:"MaxSize(254)"`
+type routerForm struct {
+	Name  string      `json:"name" valid:"Required;MaxSize(254)"`
+	Host      string  `json:"host" valid:"Required;"`
+	Path      string  `json:"path" valid:"Required;"`
+	UptreamRef uint64 `json:"upstreamRef" valid:"Required"`
+	Remark  string    `json:"remark" valid:"MaxSize(254)"`
 }
 
-func AddCert(c *gin.Context) {
+func AddRouter(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
-		form     certForm
+		form     routerForm
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
@@ -34,17 +34,20 @@ func AddCert(c *gin.Context) {
 		return
 	}
 
-	cert := service.Cert{
-		Server: form.Server,
-		Pub:    strings.TrimSpace(form.Pub),
-		Pri:    strings.TrimSpace(form.Pri),
-		Remark: form.Remark,
+	router := service.Router{
+		Name:  form.Name,
+		Host:  form.Host,
+		Path:  form.Path,
+		UpstreamRef: form.UptreamRef,
+
+		Remark:  form.Remark,
 	}
-	err := cert.Save()
+
+	err := router.Save()
 	if err != nil {
-		golog.Error("cert", zap.String("add", err.Error()))
+		golog.Error("router", zap.String("add", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.AddCertFailed
+		errCode = e.AddRouterFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
@@ -52,7 +55,7 @@ func AddCert(c *gin.Context) {
 	appG.Response(httpCode, errCode, nil)
 }
 
-func GetCert(c *gin.Context) {
+func GetRouter(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
 		httpCode = http.StatusOK
@@ -67,33 +70,33 @@ func GetCert(c *gin.Context) {
 		return
 	}
 
-	cert := service.Cert{
+	router := service.Router{
 		ID: id,
 	}
-	idCert, err := cert.Get()
+	idRouter, err := router.Get()
 	if err != nil {
-		golog.Error("user", zap.String("get", err.Error()))
+		golog.Error("router", zap.String("get", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.GetUserFailed
+		errCode = e.GetRouterFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
 
 	data := make(map[string]interface{})
-	data["record"] = idCert
+	data["record"] = idRouter
 	appG.Response(httpCode, errCode, data)
 }
 
-type queryCertForm struct {
-	Server   string `form:"server" valid:"MaxSize(254)"`
+type queryRouterForm struct {
+	Name   string `form:"name" valid:"MaxSize(254)"`
 	Page     int    `form:"current" valid:"Required;Range(1,50)"`
 	PageSize int    `form:"size" valid:"Required;Min(1)"`
 }
 
-func GetCerts(c *gin.Context) {
+func GetRouters(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
-		form     queryCertForm
+		form     queryRouterForm
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
@@ -105,30 +108,30 @@ func GetCerts(c *gin.Context) {
 		return
 	}
 
-	cert := service.Cert{
-		Server:   form.Server,
+	router := service.Router{
+		Name:   form.Name,
 		Page:     form.Page,
 		PageSize: form.PageSize,
 	}
-	certs, count, err := cert.GetList()
+	routers, count, err := router.GetList()
 	if err != nil {
-		golog.Error("cert", zap.String("get", err.Error()))
+		golog.Error("router", zap.String("get", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.GetCertFailed
+		errCode = e.GetRouterFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
 
 	data := make(map[string]interface{})
-	data["records"] = certs
+	data["records"] = routers
 	data["total"] = count
 	appG.Response(httpCode, errCode, data)
 }
 
-func PutCert(c *gin.Context) {
+func PutRouter(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
-		form     certForm
+		form     routerForm
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
@@ -148,18 +151,19 @@ func PutCert(c *gin.Context) {
 		return
 	}
 
-	cert := service.Cert{
-		ID:     id,
-		Server: form.Server,
-		Pub:    form.Pub,
-		Pri:    form.Pri,
-		Remark: form.Remark,
+	router := service.Router{
+		ID:      id,
+		Host:  form.Host,
+		Path:  form.Path,
+		UpstreamRef: form.UptreamRef,
+
+		Remark:  form.Remark,
 	}
-	err = cert.Save()
+	err = router.Save()
 	if err != nil {
-		golog.Error("cert", zap.String("put", err.Error()))
+		golog.Error("router", zap.String("put", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.PutCertFailed
+		errCode = e.PutRouterFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
@@ -167,7 +171,7 @@ func PutCert(c *gin.Context) {
 	appG.Response(httpCode, errCode, nil)
 }
 
-func DeleteCert(c *gin.Context) {
+func DeleteRouter(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
 		httpCode = http.StatusOK
@@ -182,14 +186,14 @@ func DeleteCert(c *gin.Context) {
 		return
 	}
 
-	cert := service.Cert{
+	router := service.Router{
 		ID: id,
 	}
-	err = cert.Delete()
+	err = router.Delete()
 	if err != nil {
-		golog.Error("cert", zap.String("delete", err.Error()))
+		golog.Error("router", zap.String("delete", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.DeleteCertFailed
+		errCode = e.DeleteRouterFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}

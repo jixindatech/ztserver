@@ -12,21 +12,23 @@ import (
 	"zt-server/webserver/service"
 )
 
-type proxies struct {
-	IP   string `json:"ip" valid:"Required;IP;MaxSize(254)"`
-	Port int    `json:"port" valid:"Required;Min(1);Max(65535)"`
-}
-type proxyForm struct {
-	Server  string    `json:"server" valid:"Required;MaxSize(254)"`
-	Lb      string    `json:"lb" valid:"Required;"`
-	Backend []proxies `json:"backend" valid:"Required"`
-	Remark  string    `json:"remark" valid:"MaxSize(254)"`
+type upstreamForm struct {
+	Name  string    `json:"name" valid:"Required;MaxSize(254)"`
+	Lb      string  `json:"lb" valid:"Required;Match(/chash|roundrobin/)"`
+	Key     string  `json:"key"`
+	Backend []service.Node `json:"backend" valid:"Required"`
+	Retry          int `json:"retry" valid:"Required;Min(1)"`
+	TimeoutConnect int `json:"timeoutConnect" valid:"Required;Min(1)"`
+	TimeoutSend    int `json:"timeoutSend" valid:"Required;Min(1)"`
+	TimeoutReceive int `json:"timeoutReceive" valid:"Required;Min(1)"`
+
+	Remark         string    `json:"remark" valid:"MaxSize(254)"`
 }
 
-func AddProxy(c *gin.Context) {
+func AddUpstream(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
-		form     proxyForm
+		form     upstreamForm
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
@@ -45,18 +47,38 @@ func AddProxy(c *gin.Context) {
 		return
 	}
 
-	proxy := service.Proxy{
-		Server:  form.Server,
+	if form.Lb == "chash" && len(form.Key) == 0{
+		httpCode = e.InvalidParams
+		appG.Response(httpCode, errCode, nil)
+		return
+	}
+
+	if len(form.Key) > 0 {
+		if form.Key != "remote-addr" {
+			httpCode = e.InvalidParams
+			appG.Response(httpCode, errCode, nil)
+			return
+		}
+	}
+
+	upstream := service.Upstream{
+		Name:  form.Name,
 		Lb:      form.Lb,
+		Key: form.Key,
 		Backend: []byte(backends),
+		Retry: form.Retry,
+		TimeoutConnect: form.TimeoutConnect,
+		TimeoutSend: form.TimeoutSend,
+		TimeoutReceive: form.TimeoutReceive,
+
 		Remark:  form.Remark,
 	}
 
-	err = proxy.Save()
+	err = upstream.Save()
 	if err != nil {
-		golog.Error("proxy", zap.String("add", err.Error()))
+		golog.Error("upstream", zap.String("add", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.AddProxyFailed
+		errCode = e.AddUpstreamFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
@@ -64,7 +86,7 @@ func AddProxy(c *gin.Context) {
 	appG.Response(httpCode, errCode, nil)
 }
 
-func GetProxy(c *gin.Context) {
+func GetUpstream(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
 		httpCode = http.StatusOK
@@ -79,33 +101,33 @@ func GetProxy(c *gin.Context) {
 		return
 	}
 
-	proxy := service.Proxy{
+	upstream := service.Upstream{
 		ID: id,
 	}
-	idProxy, err := proxy.Get()
+	idUpstream, err := upstream.Get()
 	if err != nil {
-		golog.Error("proxy", zap.String("get", err.Error()))
+		golog.Error("upstream", zap.String("get", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.GetProxyFailed
+		errCode = e.GetUpstreamFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
 
 	data := make(map[string]interface{})
-	data["record"] = idProxy
+	data["record"] = idUpstream
 	appG.Response(httpCode, errCode, data)
 }
 
-type queryProxyForm struct {
-	Server   string `form:"server" valid:"MaxSize(254)"`
-	Page     int    `form:"current" valid:"Required;Range(1,50)"`
-	PageSize int    `form:"size" valid:"Required;Min(1)"`
+type queryUpstreamForm struct {
+	Name   string `form:"name" valid:"MaxSize(254)"`
+	Page     int    `form:"current" valid:"Min(0)"`
+	PageSize int    `form:"size" valid:"Min(0);Max(50)"`
 }
 
-func GetProxys(c *gin.Context) {
+func GetUpstreams(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
-		form     queryProxyForm
+		form     queryUpstreamForm
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
@@ -117,30 +139,30 @@ func GetProxys(c *gin.Context) {
 		return
 	}
 
-	proxy := service.Proxy{
-		Server:   form.Server,
+	upstream := service.Upstream{
+		Name:    form.Name,
 		Page:     form.Page,
 		PageSize: form.PageSize,
 	}
-	proxys, count, err := proxy.GetList()
+	upstreams, count, err := upstream.GetList()
 	if err != nil {
-		golog.Error("proxy", zap.String("get", err.Error()))
+		golog.Error("upstream", zap.String("get", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.GetProxyFailed
+		errCode = e.GetUpstreamFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
 
 	data := make(map[string]interface{})
-	data["records"] = proxys
+	data["records"] = upstreams
 	data["total"] = count
 	appG.Response(httpCode, errCode, data)
 }
 
-func PutProxy(c *gin.Context) {
+func PutUpstream(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
-		form     proxyForm
+		form     upstreamForm
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
@@ -167,18 +189,23 @@ func PutProxy(c *gin.Context) {
 		return
 	}
 
-	proxy := service.Proxy{
+	upstream := service.Upstream{
 		ID:      id,
-		Server:  form.Server,
+		Name:    form.Name,
 		Lb:      form.Lb,
 		Backend: backends,
+		Retry: form.Retry,
+		TimeoutConnect: form.TimeoutConnect,
+		TimeoutSend: form.TimeoutSend,
+		TimeoutReceive: form.TimeoutReceive,
+
 		Remark:  form.Remark,
 	}
-	err = proxy.Save()
+	err = upstream.Save()
 	if err != nil {
-		golog.Error("proxy", zap.String("put", err.Error()))
+		golog.Error("upstream", zap.String("put", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.PutProxyFailed
+		errCode = e.PutUpstreamFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
@@ -186,7 +213,7 @@ func PutProxy(c *gin.Context) {
 	appG.Response(httpCode, errCode, nil)
 }
 
-func DeleteProxy(c *gin.Context) {
+func DeleteUpstream(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
 		httpCode = http.StatusOK
@@ -201,14 +228,14 @@ func DeleteProxy(c *gin.Context) {
 		return
 	}
 
-	proxy := service.Proxy{
+	upstream := service.Upstream{
 		ID: id,
 	}
-	err = proxy.Delete()
+	err = upstream.Delete()
 	if err != nil {
-		golog.Error("proxy", zap.String("delete", err.Error()))
+		golog.Error("upstream", zap.String("delete", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.DeleteProxyFailed
+		errCode = e.DeleteUpstreamFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}

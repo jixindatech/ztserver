@@ -6,24 +6,12 @@ import (
 	"crypto/cipher"
 	"encoding/base64"
 	"errors"
-	"fmt"
 )
 
-var localKey string = ""
 var localIv string = "yehuoshaobujin!!"
 
-func SetEncryptKey(key string) error {
-	if len(key) != 32 {
-		return fmt.Errorf("%s", "invalid config secret length")
-	}
-
-	localKey = key
-	return nil
-}
-
 // CBCEncryptWithPKCS7 CBC模式PKCS7填充AES加密
-func CBCEncryptWithPKCS7(encodeStr string) (cryptedStr string, err error) {
-	key := localKey
+func CBCEncryptWithPKCS7(key, encodeStr string) (cryptedStr string, err error) {
 	iv := localIv
 	if len(encodeStr) == 0 {
 		return
@@ -63,8 +51,7 @@ func pKCS7Padding(cipherText []byte, blockSize int) []byte {
 }
 
 // CBCDecryptWithPKCS7 CBC模式PKCS7填充AES解密
-func CBCDecryptWithPKCS7(decodeStr string) (origDataStr string, err error) {
-	key := localKey
+func CBCDecryptWithPKCS7(key, decodeStr string) (origDataStr string, err error) {
 	iv := localIv
 
 	if len(decodeStr) == 0 {

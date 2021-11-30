@@ -13,6 +13,7 @@ import (
 	"zt-server/cache"
 	"zt-server/pkg/core/golog"
 	"zt-server/storage"
+	"zt-server/webserver/model"
 	"zt-server/webserver/service"
 	"zt-server/webserver/utils"
 )
@@ -30,20 +31,19 @@ var upGrader = websocket.Upgrader{
 	},
 }
 
-func getUserResoruce(token string, userMail string) (map[string]int, error) {
-	userJs, err := simplejson.NewJson([]byte(token))
+func getUserResoruce(data string, user *model.User) (map[string]int, error) {
+	/* id, timestamp, email */
+	userJs, err := simplejson.NewJson([]byte(data))
 	if err != nil {
 		return nil, err
 	}
+
 	email, err := userJs.Get("email").String()
 	if err != nil {
 		return nil, err
 	}
-	if len(email) == 0 {
-		return nil, fmt.Errorf("%s", "invalid token email")
-	}
 
-	if email != userMail {
+	if email != user.Email {
 		return nil, fmt.Errorf("%s", "invalid user email")
 	}
 
@@ -51,36 +51,57 @@ func getUserResoruce(token string, userMail string) (map[string]int, error) {
 	if err != nil {
 		return nil, err
 	}
-	if timestamp == 0 {
-		return nil, fmt.Errorf("%s", "invalid token timestamp")
+	if timestamp != user.Timestamp {
+		return nil, fmt.Errorf("%s", "invalid user timestamp")
 	}
 
 	id, err := userJs.Get("id").Uint64()
 	if err != nil {
 		return nil, err
 	}
-	if timestamp == 0 {
+
+	if id != user.ID {
 		return nil, fmt.Errorf("%s", "invalid user id")
 	}
 
-	user, err := cache.Get(email)
+	users, err := cache.Get(service.GW)
 	if err != nil {
 		return nil, err
-	}
-	userBytes := user.([]uint8)
-	var userCache cache.UserCache
-	err = json.Unmarshal([]byte(userBytes), &userCache)
-	if err != nil {
-		return nil, err
-	}
-	if userCache.ID != id {
-		return nil, fmt.Errorf("%s", "invalid id")
-	}
-	if userCache.Timestamp != timestamp {
-		return nil, fmt.Errorf("%s", "invalid timestamp")
 	}
 
-	return userCache.Resource, nil
+	var gwCache cache.GwCache
+	err = json.Unmarshal(users.([]byte), &gwCache)
+	if err != nil {
+		return nil, err
+	}
+	/*
+	userBytes := users.([]uint8)
+	js, err := simplejson.NewJson(userBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	userData := js.Get("values").Interface()
+	usersCache := userData.([]cache.UserCache)
+	*/
+	var userResouces *cache.UserCache
+	for _, userCache := range gwCache.Values {
+		if userCache.ID == id {
+			userResouces = userCache
+			break
+		}
+	}
+
+	res := make(map[string]int)
+	if userResouces != nil  {
+		for _, resouce := range userResouces.Resources {
+			res[resouce.Host] = 1
+		}
+	} else {
+		return nil, fmt.Errorf("%s", "invalid user")
+	}
+
+	return res, nil
 }
 
 func WsHandler(c *gin.Context) {
@@ -129,28 +150,36 @@ func WsHandler(c *gin.Context) {
 				break
 			}
 
-			var token string
-			token, err = js.Get("token").String()
+			var data string
+			data, err = js.Get("data").String()
 			if err != nil {
-				golog.Error("ws", zap.String("token", err.Error()))
+				golog.Error("ws", zap.String("data 111", err.Error()))
 				break
 			}
 
-			var email string
-			email, err = js.Get("email").String()
+			id, err := js.Get("id").Uint64()
 			if err != nil {
-				golog.Error("ws", zap.String("email", err.Error()))
+				golog.Error("ws", zap.String("id", err.Error()))
+				break
+			}
+
+			userSrv := service.User{
+				ID:       id,
+			}
+			user, err := userSrv.Get()
+			if err != nil {
+				golog.Error("ws", zap.String("user", err.Error()))
 				break
 			}
 
 			var info string
-			info, err = utils.CBCDecryptWithPKCS7(token)
+			info, err = utils.CBCDecryptWithPKCS7(user.Secret, data)
 			if err != nil {
 				golog.Error("ws", zap.String("err", err.Error()))
 				break
 			}
 
-			resources, err = getUserResoruce(info, email)
+			resources, err = getUserResoruce(info, user)
 			if err != nil {
 				golog.Error("ws", zap.String("err", err.Error()))
 				break
@@ -166,8 +195,8 @@ func WsHandler(c *gin.Context) {
 
 				login = true
 				wsService.Event = OPEN
-				wsService.User = email
-				wsService.Email = email
+				wsService.User = user.Name
+				wsService.Email = user.Email
 				wsService.Dev = string(dev)
 				wsService.Time = time.Now().Unix()
 

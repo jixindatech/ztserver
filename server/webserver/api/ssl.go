@@ -1,29 +1,28 @@
 package api
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"strings"
 	"zt-server/pkg/app"
 	"zt-server/pkg/core/golog"
 	"zt-server/pkg/e"
 	"zt-server/webserver/service"
 )
 
-type resourceForm struct {
-	Name   string `form:"name" valid:"Required;MaxSize(254)"`
-	Host   string `json:"host" valid:"Required;MaxSize(254)"`
-	Path   string `json:"path" valid:"Required;MaxSize(254)"`
-	Method []string `json:"method"`
+type sslForm struct {
+	Name string `json:"name" valid:"Required;MaxSize(254)"`
+	Pub    string `json:"pub" valid:"Required;MaxSize(5120)"`
+	Pri    string `json:"pri"  valid:"Required;MaxSize(5120)"`
 	Remark string `json:"remark" valid:"MaxSize(254)"`
 }
 
-func AddResource(c *gin.Context) {
+func AddSSL(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
-		form     resourceForm
+		form     sslForm
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
@@ -35,25 +34,17 @@ func AddResource(c *gin.Context) {
 		return
 	}
 
-	methods, err := json.Marshal(form.Method)
-	if err != nil {
-		httpCode = e.InvalidParams
-		appG.Response(httpCode, errCode, nil)
-		return
-	}
-
-	resource := service.Resource{
+	ssl := service.SSL{
 		Name:   form.Name,
-		Host:   form.Host,
-		Path:   form.Path,
-		Method: methods,
+		Pub:    strings.TrimSpace(form.Pub),
+		Pri:    strings.TrimSpace(form.Pri),
 		Remark: form.Remark,
 	}
-	err = resource.Save()
+	err := ssl.Save()
 	if err != nil {
-		golog.Error("resource", zap.String("add", err.Error()))
+		golog.Error("ssl", zap.String("add", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.AddResourceFailed
+		errCode = e.AddSSLFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
@@ -61,20 +52,27 @@ func AddResource(c *gin.Context) {
 	appG.Response(httpCode, errCode, nil)
 }
 
-func GetResourceCount(c *gin.Context) {
+func GetSSL(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
 
-	resource := service.Resource{
-		Page:     1,
-		PageSize: 1,
+	strId := c.Param("id")
+	id, err := strconv.ParseUint(strId, 10, 64)
+	if id == 0 || err != nil {
+		httpCode = e.InvalidParams
+		appG.Response(httpCode, errCode, nil)
+		return
 	}
-	_, count, err := resource.GetList()
+
+	ssl := service.SSL{
+		ID: id,
+	}
+	idSSL, err := ssl.Get()
 	if err != nil {
-		golog.Error("resource", zap.String("get", err.Error()))
+		golog.Error("user", zap.String("get", err.Error()))
 		httpCode = http.StatusInternalServerError
 		errCode = e.GetUserFailed
 		appG.Response(httpCode, errCode, nil)
@@ -82,20 +80,20 @@ func GetResourceCount(c *gin.Context) {
 	}
 
 	data := make(map[string]interface{})
-	data["count"] = count
+	data["record"] = idSSL
 	appG.Response(httpCode, errCode, data)
 }
 
-type queryResourceForm struct {
+type querySSLForm struct {
 	Name     string `form:"name" valid:"MaxSize(254)"`
 	Page     int    `form:"current" valid:"Required;Range(1,50)"`
 	PageSize int    `form:"size" valid:"Required;Min(1)"`
 }
 
-func GetResources(c *gin.Context) {
+func GetSSLs(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
-		form     queryResourceForm
+		form     querySSLForm
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
@@ -107,62 +105,30 @@ func GetResources(c *gin.Context) {
 		return
 	}
 
-	resource := service.Resource{
+	ssl := service.SSL{
 		Name:     form.Name,
 		Page:     form.Page,
 		PageSize: form.PageSize,
 	}
-	resources, count, err := resource.GetList()
+	ssls, count, err := ssl.GetList()
 	if err != nil {
-		golog.Error("resource", zap.String("get", err.Error()))
+		golog.Error("ssl", zap.String("get", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.GetResourceFailed
+		errCode = e.GetSSLFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
 
 	data := make(map[string]interface{})
-	data["records"] = resources
+	data["records"] = ssls
 	data["total"] = count
 	appG.Response(httpCode, errCode, data)
 }
 
-func GetResource(c *gin.Context) {
+func PutSSL(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
-		httpCode = http.StatusOK
-		errCode  = e.SUCCESS
-	)
-
-	strId := c.Param("id")
-	id, err := strconv.ParseUint(strId, 10, 64)
-	if id == 0 || err != nil {
-		httpCode = e.InvalidParams
-		appG.Response(httpCode, errCode, nil)
-		return
-	}
-
-	resource := service.Resource{
-		ID: id,
-	}
-	idResource, err := resource.Get()
-	if err != nil {
-		golog.Error("resource", zap.String("get", err.Error()))
-		httpCode = http.StatusInternalServerError
-		errCode = e.GetResourceFailed
-		appG.Response(httpCode, errCode, nil)
-		return
-	}
-
-	data := make(map[string]interface{})
-	data["resource"] = idResource
-	appG.Response(httpCode, errCode, data)
-}
-
-func PutResource(c *gin.Context) {
-	var (
-		appG     = app.Gin{C: c}
-		form     resourceForm
+		form     sslForm
 		httpCode = http.StatusOK
 		errCode  = e.SUCCESS
 	)
@@ -182,26 +148,18 @@ func PutResource(c *gin.Context) {
 		return
 	}
 
-	methods, err := json.Marshal(form.Method)
-	if err != nil {
-		httpCode = e.InvalidParams
-		appG.Response(httpCode, errCode, nil)
-		return
-	}
-
-	resource := service.Resource{
+	ssl := service.SSL{
 		ID:     id,
 		Name:   form.Name,
-		Host:   form.Host,
-		Path:   form.Path,
-		Method: methods,
+		Pub:    form.Pub,
+		Pri:    form.Pri,
 		Remark: form.Remark,
 	}
-	err = resource.Save()
+	err = ssl.Save()
 	if err != nil {
-		golog.Error("resource", zap.String("put", err.Error()))
+		golog.Error("ssl", zap.String("put", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.PutResourceFailed
+		errCode = e.PutSSLFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
@@ -209,7 +167,7 @@ func PutResource(c *gin.Context) {
 	appG.Response(httpCode, errCode, nil)
 }
 
-func DeleteResource(c *gin.Context) {
+func DeleteSSL(c *gin.Context) {
 	var (
 		appG     = app.Gin{C: c}
 		httpCode = http.StatusOK
@@ -224,14 +182,14 @@ func DeleteResource(c *gin.Context) {
 		return
 	}
 
-	resource := service.Resource{
+	ssl := service.SSL{
 		ID: id,
 	}
-	err = resource.Delete()
+	err = ssl.Delete()
 	if err != nil {
-		golog.Error("resource", zap.String("delete", err.Error()))
+		golog.Error("ssl", zap.String("delete", err.Error()))
 		httpCode = http.StatusInternalServerError
-		errCode = e.PutResourceFailed
+		errCode = e.DeleteSSLFailed
 		appG.Response(httpCode, errCode, nil)
 		return
 	}

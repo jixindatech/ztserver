@@ -4,7 +4,7 @@
       <el-form-item
         label="服务器名称:"
       >
-        <el-input v-model.trim="query.server" />
+        <el-input v-model.trim="query.name" />
       </el-form-item>
       <el-form-item>
         <el-button
@@ -31,7 +31,12 @@
       style="width: 100%"
     >
       <el-table-column align="center" type="index" label="序号" width="60" />
-      <el-table-column align="center" prop="server" label="服务器名称" />
+      <el-table-column align="center" prop="name" label="名称" />
+      <el-table-column align="center" prop="server" label="域名">
+        <template slot-scope="scope">
+          <el-input v-for="(item, index) in scope.row.server" :key="index" :value="item" size="mini" />
+        </template>
+      </el-table-column>
       <el-table-column align="center" prop="remark" label="备注" />
       <el-table-column align="center" label="操作" width="330">
         <template slot-scope="scope">
@@ -43,7 +48,6 @@
         </template>
       </el-table-column>
     </el-table>
-
     <el-pagination
       :current-page="page.current"
       :page-sizes="[10, 20, 50]"

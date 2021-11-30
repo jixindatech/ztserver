@@ -1,7 +1,5 @@
 # server mode
 mode: debug
-# Length of secret Must be 32, encrypt data for token
-secret: 'ch@ngfengpol@nghuiyoushi!!!!!!!!'
 # the web api server
 web:
   addr : 0.0.0.0:8000
@@ -24,9 +22,9 @@ ssh:
   user: root # ssh user
   password: 123456 # ssh password
   server: # servers proxied by this host
-    - hr.xxxx.com
-    - b.xxxx.com
-    - i.xxxx.com
+    - hr.jixindatech.com
+    - b.jixindatech.com
+    - www.jixindatech.com
 # redis for data cache
 redis:
   addr: 192.168.91.100:6379

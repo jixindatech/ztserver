@@ -29,7 +29,8 @@
         "system.display",
         "webRequest", 
         "webRequestBlocking",
-        "*://www.jixindatech.com/*"
+        "*://*.jixindatech.com/*",
+        "*://jixindatech.com/*"
     ],
     "background": {
         "scripts": [ 

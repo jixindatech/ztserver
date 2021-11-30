@@ -38,7 +38,9 @@ func OpenDatabase(database string) error {
 	db.AutoMigrate(User{})
 	db.AutoMigrate(Resource{})
 	db.AutoMigrate(Email{})
-	db.AutoMigrate(Cert{})
-	db.AutoMigrate(Proxy{})
+	db.AutoMigrate(SSL{})
+	db.AutoMigrate(Upstream{})
+	db.AutoMigrate(Router{})
+
 	return nil
 }

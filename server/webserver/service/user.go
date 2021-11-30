@@ -13,6 +13,9 @@ import (
 	"zt-server/webserver/utils"
 )
 
+var GW string = "gw"
+var secretLength = 32
+
 type User struct {
 	ID uint64
 
@@ -82,19 +85,11 @@ func (u *User) SaveUserResource() error {
 	}
 
 	/* skip users without send mail */
-	if user.Timestamp == 0 {
+	if user.Timestamp == 0 || len(user.Secret) != secretLength {
 		return nil
 	}
 
-	resouces, err := model.GetUserResource(user.ID)
-	if err != nil {
-		return err
-	}
-	userResource := make(map[string]int)
-	for _, resource := range resouces {
-		userResource[resource.Server] = 1
-	}
-	err = setupUserCache(user.Email, user.ID, userResource, user.Timestamp)
+	err = SetupUserResource()
 	if err != nil {
 		return err
 	}
@@ -123,27 +118,6 @@ func (u *User) GetUserResource() ([]uint64, error) {
 	return res, nil
 }
 
-func setupUserCache(email string, id uint64, resources map[string]int, timestamp int64) error {
-	data := cache.UserCache{}
-	data.ID = id
-	data.Resource = resources
-	data.Timestamp = timestamp
-
-	userData, err := json.Marshal(data)
-	if err != nil {
-		golog.Error("user", zap.String("err", err.Error()))
-		return err
-	}
-
-	err = cache.Set(email, string(userData))
-	if err != nil {
-		golog.Error("user", zap.String("err", err.Error()))
-		return err
-	}
-
-	return nil
-}
-
 func (u *User) SendMail() error {
 	email, err := model.GetEmail()
 	if err != nil {
@@ -160,9 +134,14 @@ func (u *User) SendMail() error {
 
 	data := make(map[string]interface{})
 	data["timestamp"] = time.Now().Unix()
+	secret, err := utils.GetRandomString(secretLength)
+	if err != nil {
+		return err
+	}
 
 	if u.ID > 0 {
 		// store timestamp to database
+		data["secret"] = secret
 		err = model.PutUser(u.ID, data)
 		if err != nil {
 			return err
@@ -178,11 +157,21 @@ func (u *User) SendMail() error {
 		return err
 	}
 
-	encryptedData, err := utils.CBCEncryptWithPKCS7(string(jsonStr))
+	encryptedData, err := utils.CBCEncryptWithPKCS7(secret, string(jsonStr))
 	if err != nil {
 		return err
 	}
-	m.SetBody("text/html", encryptedData)
+
+	delete(data, "email")
+	delete(data, "secret")
+
+	data["data"] = encryptedData
+	jsonStr, err = json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	m.SetBody("text/html", string(jsonStr))
 	d := gomail.NewDialer(email.Server, email.Port, email.Email, email.Password)
 
 	go func() {
@@ -192,22 +181,7 @@ func (u *User) SendMail() error {
 		}
 	}()
 
-	user, err := model.GetUser(u.ID)
-	if err != nil {
-		return err
-	}
-
-	resources, err := model.GetResourceByUser(user.ID)
-	if err != nil {
-		return err
-	}
-
-	userResource := make(map[string]int)
-	for _, resource := range resources {
-		userResource[resource.Server] = 1
-	}
-
-	err = setupUserCache(user.Email, user.ID, userResource, user.Timestamp)
+	err = SetupUserResource()
 	if err != nil {
 		golog.Error("user", zap.String("err", err.Error()))
 		return err
@@ -216,7 +190,7 @@ func (u *User) SendMail() error {
 	return nil
 }
 
-func SetupUser() (err error) {
+func SetupUserResource() (err error) {
 	userSrv := User{}
 	users, count, err := userSrv.GetList()
 	if err != nil {
@@ -226,27 +200,62 @@ func SetupUser() (err error) {
 		return nil
 	}
 
+	usersResources := []map[string]interface{}{}
 	for _, user := range users {
+		if user.Timestamp == 0 || len(user.Secret) != secretLength {
+			continue
+		}
+
 		resources, err := model.GetResourceByUser(user.ID)
 		if err != nil {
 			return err
 		}
 
-		if user.Timestamp == 0 {
+		if len(resources) == 0 {
 			continue
 		}
 
-		userResource := make(map[string]int)
+		userData := make(map[string]interface{})
+		userData["id"] = user.ID
+		userData["name"] = user.Email
+		userData["secret"] = user.Secret
+
+		userResource := []*cache.Routes{}
 		for _, resource := range resources {
-			userResource[resource.Server] = 1
+			var methods []string
+			err := json.Unmarshal(resource.Method, &methods)
+			if err != nil {
+				return err
+			}
+
+			hostPath := &cache.Routes{
+				Host: resource.Host,
+				Path: resource.Path,
+				Methods: methods,
+			}
+			userResource = append(userResource, hostPath)
 		}
 
-		err = setupUserCache(user.Email, user.ID, userResource, user.Timestamp)
-		if err != nil {
-			golog.Error("user", zap.String("err", err.Error()))
-			return err
-		}
+		userData["resources"] = userResource
+		usersResources = append(usersResources, userData)
 	}
+	userData := make(map[string]interface{})
+	userData["timestamp"] = time.Now().Unix()
+	userData["values"] = usersResources
+
+	data, err := json.Marshal(userData)
+	if err != nil {
+		golog.Error("user", zap.String("err", err.Error()))
+		return err
+	}
+
+	err = cache.Set(GW, string(data))
+	if err != nil {
+		golog.Error("user", zap.String("err", err.Error()))
+		return err
+	}
+
+	return nil
 
 	return err
 }

@@ -1,6 +1,6 @@
 module.exports = {
 
-  title: '数据库审计系统',
+  title: '零信任管理后台',
 
   /**
    * @type {boolean} true | false
