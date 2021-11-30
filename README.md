@@ -15,8 +15,6 @@
 ```
 # server mode
 mode: release   #debug 
-# Length of secret Must be 32, encrypt data for token
-secret: 'ch@ngfengpol@nghuiyoushi!!!!!!!!'
 # the web api server
 web:
 addr : 0.0.0.0:8000
@@ -82,6 +80,9 @@ xxx.com 为实际的域名，第二个*为uri，具体可参考chrom插件资料
 - 配置 js/const.js 中的 WS_URI，连接ztserver的websocket。
 - 插件需要配置用户的email和token。
 
+## Client Data
+- 用户管理, 初始化，即可给用户指定的邮箱发送data, 用户需要将该data复制黏贴到chrome插件选项的data中，
+  才会带有权限字段，访问ztgw, 注意正确 chrom-extesion/manifest.json 中的host和path
 ## 其他
 参考 doc 下面的说明文档。
 

@@ -9,7 +9,7 @@ title: Changelog
 - add upstream timeout and retry parameters.
 - change resource with host and path and request methods.
 - support wildcard for the parameters above.
-
+- a user with a specified secret for his/her data.
 ## 0.1.0
 - Add basic schema admin dashboard with chrome extensions and gateway [ztgw](https://github.com/jixindatech/ztgw), 
   ztgw is the gateway for isolating users without proper authoriations.
