@@ -1,6 +1,11 @@
 ---
 title: Changelog
 ---
+## 0.3.0
+> web info Released on 2021/11/30
+- forget to commit to github
+> switch to mysql Released on 2021/12/10
+- switch sqlite3 to mysql
 
 ## 0.2.0
 > Released on 2021/11/30
