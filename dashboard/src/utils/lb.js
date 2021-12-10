@@ -1,6 +1,6 @@
 const LBOPTIONS = [
-  { value: 'hash', label: 'Hash' },
-  { value: 'round', label: 'Round' }
+  { value: 'chash', label: 'CHash' },
+  { value: 'roundrobin', label: 'Roundrobin' }
 ]
 
 export {
