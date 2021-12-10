@@ -8,6 +8,15 @@ web:
   jwtkey: 123456sdfq345sdfaf
   identitykey: 'id'
 
+database:
+  type: mysql
+  user: root
+  password: 123456
+  host: 127.0.0.1:3306
+  name: ztserver
+  table-prefix:
+
+
 #log_path : ./logs
 # log level[debug|info|warn|error],default error
 log_level : debug

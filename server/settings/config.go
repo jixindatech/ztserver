@@ -16,6 +16,15 @@ type WebAdminConfig struct {
 	IdentityKey string `yaml:"identitykey"`
 }
 
+type DataBase struct {
+	Type        string `mapstructure:"type"`
+	Host        string `mapstructure:"host"`
+	User        string `mapstructure:"user"`
+	Password    string `mapstructure:"password"`
+	Name        string `mapstructure:"name"`
+	TablePrefix string `mapstructure:"table-prefix"`
+}
+
 type EmailConfig struct {
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
@@ -52,7 +61,7 @@ type Es struct {
 type Config struct {
 	Mode     string          `yaml:"mode"`
 	WebAdmin *WebAdminConfig `yaml:"web"`
-
+	Database *DataBase `mapstructer:"database"`
 	Secret   string `yaml:"secret"`
 	LogPath  string `yaml:"log_path"`
 	LogLevel string `yaml:"log_level"`

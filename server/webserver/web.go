@@ -4,6 +4,7 @@ import (
 	"fmt"
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"net/http"
+	"zt-server/settings"
 	"zt-server/webserver/model"
 	"zt-server/webserver/service"
 	// "github.com/go-playground/validator/v10"
@@ -32,7 +33,7 @@ type userLoginForm struct {
 	Password string `json:"password" form:"password" validate:"required,max=254"`
 }
 
-func (web *Server) Init(key string) error {
+func (web *Server) Init(key string, database *settings.DataBase) error {
 	if len(web.Addr) == 0 {
 		return fmt.Errorf("%s", "invalid webaddr")
 	}
@@ -47,7 +48,7 @@ func (web *Server) Init(key string) error {
 	}
 
 	var err error
-	err = model.OpenDatabase(web.Dbname)
+	err = model.OpenDatabase(database)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,7 @@
   <el-dialog
     :title="title"
     :visible.sync="visible"
-    width="500px"
+    width="550px"
     :before-close="handleClose"
   >
     <el-form
@@ -11,68 +11,47 @@
       :model="formData"
       label-width="120px"
       label-position="right"
-      style="width: 400px"
+      style="width: 500px"
       status-icon
     >
-      <el-form-item prop="server">
-        <span slot="label">服务器名称
-          <el-tooltip placement="right">
+      <el-form-item prop="name" label="名称">
+        <el-input v-model="formData.name" :disabled="typeof(formData.id) !== 'undefined' && formData.id !== 0" maxlength="30" />
+      </el-form-item>
+      <el-form-item prop="host">
+        <span slot="label">域名
+          <el-tooltip placement="top" effect="light">
             <div slot="content">
-              web服务的域名，不支持通配符
+              web服务的域名，支持通配符
             </div>
             <i class="el-icon-question" />
           </el-tooltip>
         </span>
-        <el-input v-model="formData.server" :disabled="typeof(formData.id) !== 'undefined' && formData.id !== 0" maxlength="30" />
+        <el-col :span="12">
+          <el-input v-model="formData.host" />
+        </el-col>
       </el-form-item>
-      <el-form-item label="代理方式" prop="lb">
-        <el-select v-model="formData.lb" placeholder="请选择">
-          <el-option
-            v-for="item in LBOPTIONS"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <span slot="label">后端配置
-          <el-tooltip placement="right">
+      <el-form-item prop="path">
+        <span slot="label">路径
+          <el-tooltip placement="top" effect="light">
             <div slot="content">
-              目前只支持IP和端口的方式
+              web服务的访问路径，支持通配符
             </div>
             <i class="el-icon-question" />
           </el-tooltip>
         </span>
-        <el-table
-          :row-style="{height:'10px'}"
-          :cell-style="{padding:'1px'}"
-          style="font-size: 8px; margin-top: 0px;"
-          size="mini"
-          show-header
-          :data="formData.backend"
-        >
-          <el-table-column align="center" label="服务器IP" width="150px">
-            <template slot-scope="scope">
-              <el-form-item :prop="'backend.' + scope.$index + '.ip'" :rules="rules.ip">
-                <el-input v-model="scope.row.ip" size="mini" placeholder="请输入IP" />
-              </el-form-item>
-            </template>
-          </el-table-column>
-          <el-table-column align="center" label="服务器端口" width="100px">
-            <template slot-scope="scope">
-              <el-form-item :prop="'backend.' + scope.$index + '.port'" :rules="rules.port">
-                <el-input v-model.number="scope.row.port" size="mini" placeholder="端口号" />
-              </el-form-item>
-            </template>
-          </el-table-column>
-          <el-table-column align="center" width="30px">
-            <template slot-scope="scope">
-              <el-button type="text" icon="el-icon-delete" size="medium" @click="deleteRule(scope.row, scope.$index)" />
-            </template>
-          </el-table-column>
-        </el-table>
-        <el-button type="text" icon="el-icon-plus" size="mini" style="margin-bottom: 20px;" @click="addRule()">新增后端</el-button><p style="display: inline;">最多添加5条</p>
+        <el-input v-model="formData.path" />
+      </el-form-item>
+      <el-form-item label="Upstream" prop="upstreamRef">
+        <el-col :span="12">
+          <el-select v-model="formData.upstreamRef" placeholder="请选择">
+            <el-option
+              v-for="item in upstreams"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-col>
       </el-form-item>
       <el-form-item label="备注：" prop="remark">
         <el-input v-model="formData.remark" type="textarea" />
@@ -90,9 +69,9 @@
 </template>
 
 <script>
-import * as api from '@/api/proxy'
-import { LBOPTIONS } from '@/utils/lb'
-import { validateIP, isPort } from '@/utils/validate'
+import * as api from '@/api/router'
+import { getList } from '@/api/upstream'
+import { LBOPTIONS } from '@/utils/upstream'
 
 export default {
   props: {
@@ -117,18 +96,13 @@ export default {
 
   data() {
     return {
+      upstreams: [],
       LBOPTIONS,
       rules: {
-        server: [{ required: true, message: '请输入服务器名称', trigger: 'blur' }],
-        lb: [{ required: true, message: '请选择代理方式', trigger: 'change' }],
-        ip: [
-          { required: true, message: '请输入IP' },
-          { validator: validateIP, tirgger: 'change' }
-        ],
-        port: [
-          { required: true, message: '请输入端口', trigger: 'change' },
-          { validator: isPort, tirgger: 'change' }
-        ]
+        name: [{ required: true, message: '请输入Router名称', trigger: 'blur' }],
+        host: [{ required: true, message: '请输入域名', trigger: 'change' }],
+        path: [{ required: true, message: '请输入路径', trigger: 'change' }],
+        upstreamRef: [{ required: true, message: '请选择Upstream', trigger: 'change' }]
       }
     }
   },
@@ -137,9 +111,14 @@ export default {
       if (newVal) {
         if (this.formData.backend === undefined) {
           this.formData.backend = []
-          const item = { ip: '', port: '' }
+          const item = { ip: '', port: '', weight: '' }
           this.formData.backend.push(item)
         }
+
+        if (this.formData.id !== undefined) {
+          this.formData.upstreamRef = this.formData.upstreamRef[0].id
+        }
+        this.fetchUpstreams()
       }
     }
   },
@@ -155,7 +134,19 @@ export default {
         }
       })
     },
-
+    async fetchUpstreams() {
+      const response = await getList(null, 0, 0)
+      this.upstreams = []
+      if ((response.code === 200)) {
+        response.data.records.forEach((item, index) => {
+          const tmp = {
+            value: item.id,
+            label: item.name
+          }
+          this.upstreams.push(tmp)
+        })
+      }
+    },
     async submitData() {
       let response = null
       if (this.formData.id) {
@@ -199,5 +190,5 @@ export default {
 ::v-deep .el-dialog__body{padding: 0 20px;}
 ::v-deep .el-table th, .el-table tr .el-form-item{margin-bottom: 0}
 ::v-deep .el-input--mini .el-input__inner{ border-radius: 0;}
-::v-deep .cell .el-form-item__content .el-form-item__error{left: 10px; top: 35%}
+::v-deep .cell .el-form-item__content .el-form-item__error{left: 5px; top: 55%}
 </style>

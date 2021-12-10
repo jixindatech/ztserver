@@ -39,8 +39,7 @@ module.exports = {
     before: require('./mock/mock-server.js'),
     proxy: {
       [process.env.VUE_APP_BASE_API]: { // /dev-api
-        // target: 'http://mengxuegu.com:7300/mock/5f114e0544ef223bad8c9827/blog-admin',
-        target: 'http://192.168.91.100:8000/',
+        target: 'http://localhost:8000/',
         changeOrigin: true, // 开启代理服务器,
         pathRewrite: {
           [ '^' + process.env.VUE_APP_BASE_API]: '' // /dev-api/test

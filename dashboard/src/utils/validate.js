@@ -346,7 +346,7 @@ export function isPort(rule, value, callback) {
       const re = /^([0-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/
       const rsCheck = re.test(value)
       if (!rsCheck) {
-        callback(new Error('请输入在[0-65535]之间的端口值'))
+        callback(new Error('0-65535'))
       } else {
         callback()
       }

@@ -1,0 +1,4 @@
+const METHOD_OPTIONS = ['GET', 'POST', 'DELETE', 'OPTIONS', 'PUT']
+export {
+  METHOD_OPTIONS
+}

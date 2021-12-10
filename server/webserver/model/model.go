@@ -1,9 +1,11 @@
 package model
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"time"
+	"zt-server/settings"
 )
 
 type Model struct {
@@ -21,13 +23,30 @@ const path = "db"
 
 var db *gorm.DB
 
-func OpenDatabase(database string) error {
+func OpenDatabase(cfg *settings.DataBase) error {
 	var err error
-	database = path + "/" + database
-	db, err = gorm.Open("sqlite3", database)
-	if err != nil {
-		return err
+	if cfg.Type == "mysql" {
+		db, err = gorm.Open(cfg.Type, fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
+			cfg.User,
+			cfg.Password,
+			cfg.Host,
+			cfg.Name))
+		if err != nil {
+			return err
+		}
 	}
+
+	if len(cfg.TablePrefix) > 0 {
+		gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
+			return cfg.TablePrefix + defaultTableName
+		}
+	}
+
+	db.SingularTable(true)
+	db.LogMode(false)
+
+	db.DB().SetMaxIdleConns(10)
+	db.DB().SetMaxOpenConns(100)
 
 	db.SingularTable(true)
 	/*

@@ -17,8 +17,32 @@
       <el-form-item label="名称:" prop="name">
         <el-input v-model="formData.name" :disabled="typeof(formData.id) !== 'undefined' && formData.id !== 0" maxlength="254" />
       </el-form-item>
-      <el-form-item label="服务:" prop="server">
-        <el-input v-model="formData.server" maxlength="254" />
+      <el-form-item prop="host">
+        <span slot="label">域名:
+          <el-tooltip placement="top" effect="light">
+            <div slot="content">
+              web服务的访问域名，支持通配符
+            </div>
+            <i class="el-icon-question" />
+          </el-tooltip>
+        </span>
+        <el-input v-model="formData.host" maxlength="254" />
+      </el-form-item>
+      <el-form-item prop="path">
+        <span slot="label">路径:
+          <el-tooltip placement="top" effect="light">
+            <div slot="content">
+              web服务的访问路径，支持通配符
+            </div>
+            <i class="el-icon-question" />
+          </el-tooltip>
+        </span>
+        <el-input v-model="formData.path" maxlength="254" />
+      </el-form-item>
+      <el-form-item label="请求方法" prop="method">
+        <el-checkbox-group v-model="methods">
+          <el-checkbox v-for="method in METHOD_OPTIONS" :key="method" :label="method">{{ method }}</el-checkbox>
+        </el-checkbox-group>
       </el-form-item>
       <el-form-item label="备注：" prop="remark">
         <el-input v-model="formData.remark" type="textarea" />
@@ -37,6 +61,7 @@
 
 <script>
 import * as api from '@/api/resource'
+import { METHOD_OPTIONS } from '@/utils/resource'
 export default {
   props: {
     title: {
@@ -59,13 +84,24 @@ export default {
 
   data() {
     return {
+      METHOD_OPTIONS,
+      methods: [],
       rules: {
         name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
-        server: [{ required: true, message: '请输入服务名称', trigger: 'blur' }]
+        host: [{ required: true, message: '请输入请求域名', trigger: 'blur' }],
+        path: [{ required: true, message: '请输入请求路径', trigger: 'blur' }]
       }
     }
   },
-
+  watch: {
+    visible(newVal, oldVal) {
+      if (newVal) {
+        if (this.formData.id !== undefined) {
+          this.methods = this.formData.method
+        }
+      }
+    }
+  },
   methods: {
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
@@ -80,6 +116,7 @@ export default {
 
     async submitData() {
       let response = null
+      this.formData.method = this.methods
       if (this.formData.id) {
         response = await api.put(this.formData.id, this.formData)
       } else {
@@ -95,6 +132,7 @@ export default {
     },
 
     handleClose() {
+      this.methods = []
       this.$refs['formData'].resetFields()
       this.remoteClose()
     }

@@ -122,12 +122,28 @@ export const constantRoutes = [
   {
     path: '/gw',
     component: Layout,
+    meta: {
+      title: '网关管理',
+      icon: 'el-icon-s-order'
+    },
     children: [
       {
-        path: 'index',
-        component: () => import('@/views/gw/index'),
-        name: 'Gw',
-        meta: { title: '网关管理', icon: 'el-icon-setting', affix: true }
+        path: 'ssl',
+        component: () => import('@/views/gw/ssl'),
+        name: 'SSL',
+        meta: { title: '证书管理', icon: 'el-icon-setting', affix: true }
+      },
+      {
+        path: 'router',
+        component: () => import('@/views/gw/router'),
+        name: 'Router',
+        meta: { title: '路由管理', icon: 'el-icon-setting', affix: true }
+      },
+      {
+        path: 'upstream',
+        component: () => import('@/views/gw/upstream'),
+        name: 'Upstream',
+        meta: { title: 'Upstream管理', icon: 'el-icon-setting', affix: true }
       }
     ]
   },

@@ -1,11 +1,10 @@
 <template>
   <div class="app-container">
-    <!-- 条件查询 -->
     <el-form :inline="true" :model="query" size="mini">
       <el-form-item
-        label="资源名称:"
+        label="名称:"
       >
-        <el-input v-model.trim="query.name" />
+        <el-input v-model.trim="query.server" />
       </el-form-item>
       <el-form-item>
         <el-button
@@ -18,42 +17,37 @@
           @click="reload"
         >重置</el-button>
         <el-button
-          v-if="!ids"
           icon="el-icon-circle-plus-outline"
           type="primary"
           @click="openAdd"
         >新增</el-button>
-        <el-button
-          v-if="ids"
-          icon="el-icon-circle-plus-outline"
-          type="success"
-          @click="saveUserResource"
-        >配置</el-button>
       </el-form-item>
     </el-form>
-
     <el-table
-      ref="dataTable"
       :data="list"
       stripe
       border
       style="width: 100%"
-      row-key="id"
-      @selection-change="handleSelectionChange"
     >
-      <el-table-column v-if="ids" align="center" reserve-selection type="selection" width="55" />
       <el-table-column align="center" type="index" label="序号" width="60" />
-      <el-table-column align="center" prop="name" label="名称" />
-      <el-table-column align="center" prop="host" label="服务" />
-      <el-table-column align="center" prop="path" label="请求路径" />
-      <el-table-column align="center" prop="path" label="请求方法">
+      <el-table-column align="center" prop="name" label="Upstream名称" />
+      <el-table-column align="center" prop="lb" label="负载均衡方式">
         <template slot-scope="scope">
-          <el-button v-for="(item, index) in scope.row.method" :key="index" plain size="mini">
-            {{ item }}
-          </el-button>
+          <template v-if="scope.row.key.length > 0">
+            {{ scope.row.lb + ":" + scope.row.key }}
+          </template>
+          <template v-else>
+            {{ scope.row.lb }}
+          </template>
         </template>
       </el-table-column>
-      <el-table-column v-if="!ids" align="center" label="操作" width="330">
+      <el-table-column align="center" prop="backend" :render-header="renderLBHeader">
+        <template slot-scope="scope">
+          <el-input v-for="(item, index) in scope.row.backend" :key="index" :value="item.ip + ':' + item.port + ':' + item.weight" size="mini" />
+        </template>
+      </el-table-column>
+      <el-table-column align="center" prop="remark" label="备注" />
+      <el-table-column align="center" label="操作" width="330">
         <template slot-scope="scope">
           <el-button
             type="success"
@@ -78,29 +72,27 @@
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
     />
-
     <edit
       :title="edit.title"
       :form-data="edit.formData"
       :visible="edit.visible"
       :remote-close="remoteClose"
     />
+
   </div>
 </template>
 
 <script>
-import * as api from '@/api/resource'
+import * as api from '@/api/upstream'
 import Edit from './edit'
 
 export default {
-  name: 'Resource',
+  name: 'Upstream',
   components: { Edit },
   props: {
-    ids: {
-      type: Array,
-      default: function() {
-        return null
-      }
+    name: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -116,23 +108,24 @@ export default {
         title: '',
         visible: false,
         formData: {}
-      },
-      checkedResourceList: []
+      }
     }
   },
-
-  watch: {
-    ids() {
-      this.query = {}
-      this.queryData()
-    }
-  },
-
   created() {
     this.fetchData()
   },
 
   methods: {
+    renderLBHeader() {
+      return (
+        <div style='display : inline; '>
+          <el-tooltip class='tooltip' effect='light' placement='top'>
+            <i class='el-icon-question'>后端</i>
+            <div slot='content' >IP 端口及权重按顺序以 ':' 分割</div>
+          </el-tooltip>
+        </div>
+      )
+    },
     async fetchData() {
       const { data } = await api.getList(
         this.query,
@@ -142,19 +135,8 @@ export default {
 
       this.list = data.records
       this.page.total = data.total
+    },
 
-      this.chekedResources()
-    },
-    chekedResources() {
-      this.$refs.dataTable.clearSelection()
-      if (this.ids) {
-        this.list.forEach((item) => {
-          if (this.ids.indexOf(item.id) !== -1) {
-            this.$refs.dataTable.toggleRowSelection(item, true)
-          }
-        })
-      }
-    },
     handleSizeChange(val) {
       this.page.size = val
       this.fetchData()
@@ -173,14 +155,6 @@ export default {
     reload() {
       this.query = {}
       this.fetchData()
-    },
-
-    handleEdit(id) {
-      api.get(id).then((response) => {
-        this.edit.formData = response.data.resource
-        this.edit.title = '编辑'
-        this.edit.visible = true
-      })
     },
 
     handleDelete(id) {
@@ -207,23 +181,17 @@ export default {
       this.edit.visible = true
     },
 
+    handleEdit(id) {
+      api.get(id).then((response) => {
+        this.edit.formData = response.data.record
+        this.edit.title = '编辑'
+        this.edit.visible = true
+      })
+    },
     remoteClose() {
       this.edit.formData = {}
       this.edit.visible = false
       this.fetchData()
-    },
-
-    handleSelectionChange(val) {
-      this.checkedResourceList = val
-    },
-
-    saveUserResource() {
-      const checkedResourceIds = []
-      this.checkedResourceList.forEach((item) => {
-        checkedResourceIds.push(item.id)
-      })
-
-      this.$emit('saveUserResource', checkedResourceIds)
     }
   }
 }

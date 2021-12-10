@@ -82,7 +82,7 @@ func main() {
 	gin.SetMode(cfg.Mode)
 	gin.DefaultWriter = golog.GetLogger()
 
-	err = web.Init(cfg.Secret)
+	err = web.Init(cfg.Secret, cfg.Database)
 	if err != nil {
 		golog.Fatal("main", zap.String("web", err.Error()))
 	}

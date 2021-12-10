@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import * as api from '@/api/cert'
+import * as api from '@/api/ssl'
 export default {
   props: {
     title: {

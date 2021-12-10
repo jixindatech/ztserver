@@ -74,11 +74,11 @@
 </template>
 
 <script>
-import * as api from '@/api/proxy'
+import * as api from '@/api/upstream'
 import Edit from './edit'
 
 export default {
-  name: 'Proxy',
+  name: 'Upstream',
   components: { Edit },
   props: {
     name: {

@@ -99,7 +99,7 @@ func sshClearFw(config *settings.Ssh) error {
 		if err != nil {
 			return err
 		}
-		output, err := session.CombinedOutput(cmd)
+		_, err := session.CombinedOutput(cmd)
 		if err != nil {
 			return err
 		}
