@@ -13,7 +13,7 @@ import (
 	"zt-server/webserver/utils"
 )
 
-var GW string = "gw"
+var GW string = "zt"
 var secretLength = 32
 
 type User struct {
